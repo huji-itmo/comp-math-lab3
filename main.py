@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from errors import mse, mae
 
+MAX_ITERATIONS = 100
+
 
 def runge_rule(prev_integral, approx, k):
     return abs((prev_integral - approx) / (2**k - 1))
@@ -18,28 +20,46 @@ def compare_integration_methods(func, interval, exact_integral, methods, epsilon
 
     for method in methods:
         print("----", method["name"], "-----")
-        prev_integral = 0
+        prev_integral = None
 
-        number_of_divisions = 1
+        number_of_divisions = 4
 
         iteration = 0
 
-        while iteration < 100:
+        while iteration < MAX_ITERATIONS:
             iteration += 1
             x = np.linspace(interval[0], interval[1], number_of_divisions + 1)
-            number_of_divisions *= 2
             approx = method["method"](func, x)
             k = method["degree"]
-            # правило рунге
-            if runge_rule(prev_integral, approx, k) < epsilon:
-                print("found value after", iteration, "iterations")
-                print("value:", approx)
+            print("-- Iteration", iteration)
+            print("number of intervals:", number_of_divisions)
+            print("value:", approx)
+            print("diff between analitical:", approx - exact_integral)
+            if exact_integral != 0:
+                print(
+                    "percent:",
+                    abs(((approx - exact_integral) / exact_integral) * 100),
+                    "%",
+                )
+            else:
+                print("percent:", 0, "%")
+            if prev_integral is not None:
+                k = method["degree"]
+                runge = runge_rule(prev_integral, approx, k)
+                print("runge", runge)
 
-                print("diff between analitical:", approx - exact_integral)
-                print()
+                if runge < epsilon:
+                    print("-- Условие Рунге выполнено")
+                    print("found value after", iteration, "iterations")
+                    print("final value:", approx)
 
-                break
+                    print()
+                    break
             prev_integral = approx
+            number_of_divisions *= 2
+
+        if iteration == MAX_ITERATIONS:
+            print("!!! MAX ITERATIONS !!!")
 
 
 # Example usage
@@ -83,7 +103,7 @@ if __name__ == "__main__":
     while True:
         try:
             epsilon = float(input("Enter epsilon: "))
-            if a <= 0:
+            if epsilon <= 0:
                 print("Should be positive")
                 continue
             break
